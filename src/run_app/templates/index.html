@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FruitSure AI - Phát Hiện Hóa Chất Trong Trái Cây</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --color-primary: #4CAF50;
+            --color-primary-light: #C8E6C9;
+            --color-primary-dark: #388E3C;
+            --color-success: #66BB6A;
+            --color-danger: #EF5350;
+            --color-warning: #FF9800;
+            --color-bg: #F9FBF7;
+            --color-card: rgba(255, 255, 255, 0.94);
+            --color-text: #1B5E20;
+            --color-text-light: #558B2F;
+            --color-border: #E8F5E8;
+            --color-shadow: rgba(76, 175, 80, 0.15);
+            
+            --radius-lg: 28px;
+            --radius-md: 20px;
+            --radius-sm: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .result-card.danger {
+            background: linear-gradient(135deg, #FFEBEE, #FFCDD2);
+            border: 2px solid #EF5350;
+            box-shadow: 0 8px 25px rgba(239, 83, 80, 0.2);
+        }
+
+        .result-icon.chemical {
+            background: #EF5350;
+            color: white;
+        }
+
+        .danger-text {
+            color: #D32F2F;
+            font-weight: 700;
+        }
+
+        .btn-download.danger {
+            background: #EF5350;
+            color: white;
+        }
+        .btn-download.danger:hover {
+            background: #D32F2F;
+        }
+        .result-card.success {
+            background: linear-gradient(135deg, #E8F5E8, #C8E6C9);
+            border: 2px solid #66BB6A;
+            box-shadow: 0 8px 25px rgba(102, 187, 106, 0.2);
+        }
+
+        .result-icon.real {
+            background: #66BB6A;
+            color: white;
+        }
+
+        .success-text {
+            color: #2E7D32;
+            font-weight: 700;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        
+        body {
+            background: var(--color-bg);
+            min-height: 100vh;
+            color: var(--color-text);
+            background-image: url('{{ url_for("static", filename="image/bgfr.jpg") }}');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            width: 100%;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 2px 20px var(--color-shadow);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 26px;
+            color: var(--color-primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        .logo .ai-badge {
+            background: var(--color-primary);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+        .nav-links a {
+            color: var(--color-text-light);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            transition: var(--transition);
+        }
+        .nav-links a:hover {
+            color: var(--color-primary-dark);
+        }
+
+        .btn-start {
+            background: var(--color-primary);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 15px;
+            transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        .btn-start:hover {
+            background: var(--color-primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .main-container {
+            margin: 80px auto !important;
+            width: min(90%, 1100px);
+            max-width: 1100px;
+            background: var(--color-card);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            min-height: 620px;
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(76, 175, 80, 0.2);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .upload-view {
+            padding: 48px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .upload-view h1 {
+            font-size: 38px;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--color-primary-dark), var(--color-success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            line-height: 1.2;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .upload-view p {
+            color: #2E7D32;
+            font-size: 17px;
+            margin-bottom: 32px;
+            max-width: 600px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-box {
+            border: 3px dashed var(--color-primary-light);
+            border-radius: var(--radius-md);
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            background: #F8FFF8;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+        .upload-box:hover {
+            border-color: var(--color-primary);
+            background: #E8F5E8;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.15);
+        }
+
+        .upload-icon {
+            font-size: 56px;
+            color: var(--color-primary);
+            margin-bottom: 16px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .upload-text {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--color-text);
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            font-size: 14px;
+            color: var(--color-text-light);
+        }
+
+        #preview {
+            max-width: 100%;
+            max-height: 280px;
+            margin: 24px auto;
+            border-radius: var(--radius-md);
+            display: none;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            animation: zoomIn 0.5s ease-out;
+        }
+
+        .btn-camera {
+            margin-top: 16px;
+            background: var(--color-primary-light);
+            color: var(--color-primary-dark);
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            transition: var(--transition);
+        }
+        .btn-camera:hover {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-analyze {
+            margin-top: 24px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-success));
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            max-width: 400px;
+            transition: var(--transition);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+        }
+        .btn-analyze:disabled {
+            background: #E0E0E0;
+            color: #999;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .btn-analyze:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(76, 175, 80, 0.4);
+        }
+
+        .guideline {
+            margin-top: 24px;
+            padding: 16px 20px;
+            background: #FFEBEE;
+            border: 1.5px solid #FFCDD2;
+            border-radius: var(--radius-sm);
+            color: var(--color-danger);
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            max-width: 500px;
+        }
+
+        .accuracy {
+            margin-top: 20px;
+            font-size: 15px;
+            color: var(--color-text-light);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .result-view {
+            padding: 60px;
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 32px;
+            padding: 0 8px;
+        }
+
+        .btn-back {
+            background: transparent;
+            border: 2px solid var(--color-primary-light);
+            color: var(--color-primary-dark);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+        .btn-back:hover {
+            background: var(--color-primary-light);
+        }
+
+        .result-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--color-text);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-card {
+            background: var(--color-primary-light);
+            border: 3px solid var(--color-primary);
+            border-radius: var(--radius-md);
+            padding: 32px;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 12px 35px rgba(76, 175, 80, 0.2);
+            animation: bounceIn 0.8s ease-out;
+            /* max-width: 600px !important;
+            padding: 40px 32px !important;
+            margin: 20px auto !important;
+            background: #E8F5E8;
+            border: 3px solid #4CAF50;
+            border-radius: 28px;
+            text-align: center;
+            box-shadow: 0 12px 35px rgba(76, 175, 80, 0.2); */
+        }
+
+        .result-icon {
+            font-size: 56px;
+            margin-bottom: 16px;
+            /* font-size: 80px !important;
+            color: #4CAF50;
+            margin-bottom: 16px;
+            display: block; */
+        }
+        .result-icon.real { color: var(--color-success); }
+        .result-icon.fake { color: var(--color-danger); animation: pulse 1.5s infinite; }
+
+        .result-label {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            /* font-size: 19px !important;
+            font-weight: 700;
+            color: #1B5E20;
+            margin-bottom: 8px;
+            white-space: nowrap; */
+        }
+
+        .result-confidence {
+            font-size: 42px;
+            font-weight: 800;
+            color: var(--color-primary-dark);
+        }
+
+        .detail-section {
+            max-width: 600px !important;
+            margin: 0 auto 32px;
+        }
+
+        .detail-title {
+            font-size: 16px;
+            color: var(--color-text-light);
+            margin-bottom: 16px;
+            text-align: left;
+            /* font-size: 20px !important;
+            font-weight: 800;
+            color: #1B5E20;
+            margin: 8px 0 24px; */
+        }
+
+        .confidence-bars {
+            display: flex;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .bar-real {
+            background: var(--color-success);
+            transition: width 1.2s ease;
+        }
+        .bar-fake {
+            background: var(--color-danger);
+            transition: width 1.2s ease;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 15px;
+        }
+        .detail-name {
+            color: var(--color-text-light);
+            font-weight: 600;
+        }
+        .detail-percent {
+            font-weight: 700;
+            color: var(--color-text);
+        }
+
+        .btn-download {
+            margin-top: 28px;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 16px;
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+            transition: var(--transition);
+        }
+        .btn-download:hover {
+            background: var(--color-primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .info-section {
+            margin: 80px auto;
+            max-width: 1100px;
+            padding: 0 32px;
+            z-index: 1;
+            position: relative;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            margin-bottom: 48px;
+        }
+
+        .info-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 32px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: 1px solid var(--color-border);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .info-card h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--color-primary-dark);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-card p {
+            color: var(--color-text-light);
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .fruit-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .fruit-item {
+            position: relative;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            transition: var(--transition);
+        }
+
+        .fruit-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 35px rgba(0,0,0,0.15);
+        }
+
+        .fruit-item img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+
+        .fruit-item:hover img {
+            transform: scale(1.08);
+        }
+
+        .fruit-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            color: white;
+            padding: 16px 12px 12px;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .tips-list {
+            list-style: none;
+        }
+
+        .tips-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #F1F8E9;
+            border-radius: var(--radius-sm);
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .tips-list li.real {
+            background: #E8F5E8;
+            border-left-color: var(--color-success);
+        }
+
+        .tips-list li.fake {
+            background: #FFEBEE;
+            border-left-color: var(--color-danger);
+        }
+
+        .tips-list li .icon {
+            font-size: 24px;
+            margin-top: 2px;
+        }
+
+        .tips-list li .content {
+            flex: 1;
+        }
+
+        .tips-list li strong {
+            color: var(--color-text);
+        }
+
+        /* LOADING */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #E8F5E8;
+            border-top: 5px solid var(--color-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        /* SCROLL TO TOP */
+        #scrollTop {
+            position: fixed;
+            bottom: 30px; right: 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(76,175,80,0.4);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        #scrollTop.show { opacity: 1; }
+
+        /* ANIMATIONS */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes bounceIn { 0%, 20%, 40%, 60%, 80%, 100% { transition-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1); } 0% { opacity: 0; transform: scale3d(0.3, 0.3, 0.3); } 20% { transform: scale3d(1.1, 1.1, 1.1); } 40% { transform: scale3d(0.9, 0.9, 0.9); } 60% { opacity: 1; transform: scale3d(1.03, 1.03, 1.03); } 80% { transform: scale3d(0.97, 0.97, 0.97); } 100% { opacity: 1; transform: scale3d(1, 1, 1); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 992px) {
+            .info-grid { grid-template-columns: 1fr; }
+            .navbar { padding: 12px 16px; flex-direction: column; gap: 12px; }
+            .nav-links { order: 3; width: 100%; justify-content: center; }
+            .main-container { width: 95%; margin-top: 120px; }
+            .upload-view, .result-view { padding: 32px 20px; }
+            .upload-view h1 { font-size: 30px; }
+        }
+        .result-icon-large {
+            width: 100px;
+            height: 100px;
+            background: #EF5350;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 56px;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 30px rgba(239, 83, 80, 0.35);
+            animation: pulse-danger 1.5s infinite;
+        }
+
+        @keyframes pulse-danger {
+            0% { transform: scale(1); box-shadow: 0 10px 30px rgba(239, 83, 80, 0.35); }
+            50% { transform: scale(1.1); box-shadow: 0 15px 40px rgba(239, 83, 80, 0.5); }
+            100% { transform: scale(1); box-shadow: 0 10px 30px rgba(239, 83, 80, 0.35); }
+        }
+        .result-icon-normal {
+            width: 70px;
+            height: 70px;
+            background: #66BB6A;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+            margin: 0 auto 16px;
+            box-shadow: 0 6px 20px rgba(102, 187, 106, 0.25);
+        }
+
+        .result-card {
+            background: white !important;
+            border: 1px solid #E8F5E8 !important;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08) !important;
+            padding: 32px 28px;
+            border-radius: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="#" class="logo">FRUITSURE <span class="ai-badge">AI</span></a>
+        <div class="nav-links">
+            <a href="{{ url_for('about') }}">Về chúng tôi</a>
+            <!-- <a href="#">Tính năng</a>
+            <a href="#">Liên hệ</a> -->
+        </div>
+        <a href="#" class="btn-start">Bắt đầu</a>
+    </div>
+
+    <div class="main-container">
+        <div class="upload-view" id="uploadView">
+            <h1>Phát hiện trái cây<br><span style="background: linear-gradient(90deg, #c5221f, #ff5252); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">ngâm hóa chất</span> trong 3 giây</h1>
+            <p>AI nhận diện sáp công nghiệp, formalin – Bảo vệ sức khỏe gia đình bạn!</p>
+
+            <div class="upload-box" id="uploadArea">
+                <span class="material-icons upload-icon">cloud_upload</span>
+                <div class="upload-text">Nhấp hoặc Kéo & Thả Ảnh Trái Cây</div>
+                <div class="upload-hint">MobileNetV3 • Tối đa 10MB • JPG, PNG</div>
+                <input type="file" id="fileInput" accept="image/*" style="display:none;">
+            </div>
+
+            <img id="preview" alt="Preview">
+
+            <button class="btn-camera" id="cameraBtn">
+                <i class="fas fa-camera"></i> Chụp ảnh trực tiếp
+            </button>
+
+            <button class="btn-analyze" id="analyzeBtn" disabled>PHÂN TÍCH NGAY</button>
+
+            <div class="guideline">
+                <span class="material-icons">info</span>
+                Lưu ý: Vui lòng chụp một trái cây duy nhất, không có vật thể gây nhiễu.
+            </div>
+
+            <div class="accuracy">
+                <span class="material-icons">verified</span>
+                Độ chính xác: <strong>94.2%</strong> (1200+ mẫu)
+            </div>
+        </div>
+
+        <div class="result-view" id="resultView">
+            <div class="result-header">
+                <button class="btn-back" id="backBtn">
+                    <span class="material-icons">arrow_back</span> Quay lại
+                </button>
+                <div class="result-title">Kết Quả Kiểm Định</div>
+                <div style="width: 50px;"></div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>AI đang phân tích hình ảnh...</p>
+            </div>
+
+            <div id="resultContent" style="display:none;"></div>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <div class="info-grid">
+            <div class="info-card">
+                <h3><span class="material-icons">warning</span> Tình trạng trái cây hiện nay</h3>
+                <p>Theo báo cáo của Bộ Y tế, <strong>hơn 40% trái cây nhập khẩu</strong> có dư lượng hóa chất bảo quản vượt mức cho phép. Các chất như <strong>sáp công nghiệp</strong> và <strong>formalin</strong> được sử dụng để kéo dài thời gian bảo quản, gây nguy cơ <strong>ung thư, tổn thương gan, thận</strong>.</p>
+                <p>Người tiêu dùng khó phân biệt bằng mắt thường, dẫn đến <strong>rủi ro sức khỏe lâu dài</strong> cho gia đình, đặc biệt là trẻ em.</p>
+            </div>
+
+            <div class="info-card">
+                <h3><span class="material-icons">lightbulb</span> Nhận biết bằng mắt thường</h3>
+                <p>Dưới đây là <strong>các dấu hiệu rõ ràng</strong> để bạn tự kiểm tra trước khi mua:</p>
+                <ul class="tips-list">
+                    <li class="real">
+                        <span class="material-icons icon">check_circle</span>
+                        <div class="content"><strong>Thật:</strong> Bề mặt có lớp phấn mờ tự nhiên, sờ sần, mùi thơm đặc trưng.</div>
+                    </li>
+                    <li class="fake">
+                        <span class="material-icons icon">warning</span>
+                        <div class="content"><strong>Giả:</strong> Bề mặt bóng loáng bất thường, sờ nhờn, không có mùi hoặc mùi hóa chất.</div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="margin-top: 48px;">
+            <h3 style="text-align: center; font-size: 24px; margin-bottom: 24px; color: var(--color-primary-dark); text-shadow: 0 2px 6px rgba(0,0,0,0.3);">
+                <span class="material-icons" style="vertical-align: middle;">photo_library</span> Thư viện trái cây
+            </h3>
+            <div class="fruit-gallery">
+                <div class="fruit-item">
+                    <img src="{{ url_for('static', filename='image/apple_0099.jpg') }}" alt="Táo thật">
+                    <div class="fruit-label">Táo tự nhiên (phấn mờ)</div>
+                </div>
+                <div class="fruit-item">
+                    <img src="{{ url_for('static', filename='image/apple_for.jpg') }}" alt="Táo phủ sáp">
+                    <div class="fruit-label">Táo phủ sáp (bóng loáng)</div>
+                </div>
+                <div class="fruit-item">
+                    <img src="{{ url_for('static', filename='image/orange_fr.jpg') }}" alt="Cam tự nhiên">
+                    <div class="fruit-label">Cam tự nhiên</div>
+                </div>
+                <div class="fruit-item">
+                    <img src="{{ url_for('static', filename='image/Orange_for.jpg') }}" alt="Cam ngâm thuốc">
+                    <div class="fruit-label">Cam ngâm thuốc</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCROLL TO TOP -->
+    <button id="scrollTop" title="Lên đầu trang">
+        <span class="material-icons">arrow_upward</span>
+    </button>
+
+    <script>
+        const uploadView = document.getElementById('uploadView');
+        const resultView = document.getElementById('resultView');
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const cameraBtn = document.getElementById('cameraBtn');
+        const preview = document.getElementById('preview');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const backBtn = document.getElementById('backBtn');
+        const loading = document.getElementById('loading');
+        const resultContent = document.getElementById('resultContent');
+
+        let selectedFile = null;
+
+        function showResult() {
+            uploadView.style.display = 'none';
+            resultView.style.display = 'flex';
+            loading.style.display = 'block';
+            resultContent.style.display = 'none';
+        }
+
+        function showUpload() {
+            resultView.style.display = 'none';
+            uploadView.style.display = 'flex';
+            preview.style.display = 'none';
+            analyzeBtn.disabled = true;
+            selectedFile = null;
+        }
+
+        backBtn.onclick = showUpload;
+        uploadArea.onclick = () => fileInput.click();
+        cameraBtn.onclick = () => { fileInput.setAttribute('capture', 'environment'); fileInput.click(); };
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(event => {
+            uploadArea.addEventListener(event, e => {
+                e.preventDefault(); e.stopPropagation();
+                uploadArea.style.borderColor = (event === 'dragenter' || event === 'dragover') ? 'var(--color-primary)' : 'var(--color-primary-light)';
+            });
+        });
+
+        uploadArea.addEventListener('drop', e => { if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+        fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) return;
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = e => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                analyzeBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        analyzeBtn.onclick = async () => {
+            if (!selectedFile) return;
+            showResult();
+            const base64 = await fileToBase64(selectedFile);
+
+            try {
+                const res = await fetch('/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: base64 }) });
+                const data = await res.json();
+
+                setTimeout(() => {
+                    loading.style.display = 'none';
+                    resultContent.style.display = 'block';
+                    displayResult(data);
+                }, 1500);
+            } catch (err) {
+                loading.innerHTML = `<p style="color:var(--color-danger);">Lỗi: ${err.message}</p>`;
+            }
+        };
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // function displayResult(data) {
+        //     const isReal = data.predicted.includes('Thật');
+        //     const icon = isReal ? 'check_circle' : 'warning';
+        //     const iconClass = isReal ? 'real' : 'fake';
+
+        //     const realProb = data.all_probabilities['Thật (tươi/thối tự nhiên)'] || 0;
+        //     const fakeProb = data.all_probabilities['Giả hóa chất (sáp/formalin)'] || 0;
+
+        //     resultContent.innerHTML = `
+        //         <div class="result-card">
+        //             <div class="result-icon ${iconClass}"><span class="material-icons">${icon}</span></div>
+        //             <div class="result-label">${data.predicted}</div>
+        //             <div class="result-confidence">${data.confidence.toFixed(1)}%</div>
+        //         </div>
+
+        //         <div class="detail-section">
+        //             <div class="detail-title">Phân tích chi tiết:</div>
+        //             <div class="confidence-bars">
+        //                 <div class="bar-fake" style="width: ${fakeProb}%"></div>
+        //                 <div class="bar-real" style="width: ${realProb}%"></div>
+        //             </div>
+        //             <div class="detail-item"><span class="detail-name">Giả hóa chất (sáp/formalin)</span><span class="detail-percent">${fakeProb.toFixed(1)}%</span></div>
+        //             <div class="detail-item"><span class="detail-name">Thật (tươi/thối tự nhiên)</span><span class="detail-percent">${realProb.toFixed(1)}%</span></div>
+        //         </div>
+
+        //         <button class="btn-download"><i class="fas fa-download"></i> Tải Kết Quả</button>
+        //     `;
+        // }
+        
+        // function displayResult(data) {
+        //     const isReal = data.predicted.includes('Thật');
+        //     const isChemical = data.predicted.includes('Giả hóa chất');
+
+        //     // Xác định màu sắc theo kết quả
+        //     const resultColor = isChemical ? 'danger' : 'success';
+        //     const icon = isReal ? 'check_circle' : 'warning';
+        //     const iconClass = isChemical ? 'chemical' : (isReal ? 'real' : 'fake');
+
+        //     const realProb = data.all_probabilities['Thật (tươi/thối tự nhiên)'] || 0;
+        //     const fakeProb = data.all_probabilities['Giả hóa chất (sáp/formalin)'] || 0;
+
+        //     resultContent.innerHTML = `
+        //         <div class="result-card ${resultColor}">
+        //             <div class="result-icon ${iconClass}">
+        //                 <span class="material-icons">${icon}</span>
+        //             </div>
+        //             <div class="result-label">${data.predicted}</div>
+        //             <div class="result-confidence">${data.confidence.toFixed(1)}%</div>
+        //         </div>
+
+        //         <div class="detail-section">
+        //             <div class="detail-title">Phân tích chi tiết:</div>
+        //             <div class="confidence-bars">
+        //                 <div class="bar-fake" style="width: ${fakeProb}%"></div>
+        //                 <div class="bar-real" style="width: ${realProb}%"></div>
+        //             </div>
+        //             <div class="detail-item">
+        //                 <span class="detail-name">Giả hóa chất (sáp/formalin)</span>
+        //                 <span class="detail-percent ${isChemical ? 'danger-text' : ''}">${fakeProb.toFixed(1)}%</span>
+        //             </div>
+        //             <div class="detail-item">
+        //                 <span class="detail-name">Thật (tươi/thối tự nhiên)</span>
+        //                 <span class="detail-percent ${isReal ? 'success-text' : ''}">${realProb.toFixed(1)}%</span>
+        //             </div>
+        //         </div>
+
+        //         <button class="btn-download ${resultColor}">
+        //             <i class="fas fa-download"></i> Tải Kết Quả
+        //         </button>
+        //     `;
+        // }
+
+        function displayResult(data) {
+            const isReal = data.predicted.includes('Thật');
+            const isChemical = data.predicted.includes('Giả hóa chất');
+
+            const realProb = data.all_probabilities['Thật (tươi/thối tự nhiên)'] || 0;
+            const fakeProb = data.all_probabilities['Giả hóa chất (sáp/formalin)'] || 0;
+
+            const icon = isReal ? 'check_circle' : 'warning';
+            const iconClass = isChemical ? 'result-icon-large' : 'result-icon-normal';
+
+            resultContent.innerHTML = `
+                <div class="result-card">
+                    <!-- ICON LỚN HOẶC NHỎ -->
+                    <div class="${iconClass}">
+                        <span class="material-icons">${icon}</span>
+                    </div>
+
+                    <!-- KẾT QUẢ CHÍNH -->
+                    <div class="result-label" style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">
+                        ${data.predicted}
+                    </div>
+                    <div class="result-confidence" style="font-size: 32px; font-weight: 800; color: ${isChemical ? '#D32F2F' : '#2E7D32'};">
+                        ${data.confidence.toFixed(1)}%
+                    </div>
+
+                    <!-- PHÂN TÍCH CHI TIẾT -->
+                    <div class="detail-section" style="margin-top: 24px;">
+                        <div class="detail-title">Phân tích chi tiết:</div>
+                        <div class="confidence-bars">
+                            <div class="bar-fake" style="width: ${fakeProb}%"></div>
+                            <div class="bar-real" style="width: ${realProb}%"></div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-name">Giả hóa chất (sáp/formalin)</span>
+                            <span class="detail-percent" style="color: ${isChemical ? '#D32F2F' : '#666'}; font-weight: ${isChemical ? '700' : '500'};">
+                                ${fakeProb.toFixed(1)}%
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-name">Thật (tươi/thối tự nhiên)</span>
+                            <span class="detail-percent" style="color: ${isReal ? '#2E7D32' : '#666'}; font-weight: ${isReal ? '700' : '500'};">
+                                ${realProb.toFixed(1)}%
+                            </span>
+                        </div>
+                    </div>
+
+                    <button class="btn-download" style="background: ${isChemical ? '#EF5350' : '#4CAF50'}; margin-top: 24px;">
+                        <i class="fas fa-download"></i> Tải Kết Quả
+                    </button>
+                </div>
+            `;
+        }
+
+        // Scroll to top
+        window.addEventListener('scroll', () => {
+            document.getElementById('scrollTop').classList.toggle('show', window.scrollY > 300);
+        });
+        document.getElementById('scrollTop').onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        showUpload();
+    </script>
+</body>
+</html>
