@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FruitSure: Kiểm Định Chất Lượng - Trang Chủ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            /* Màu sắc dựa trên ảnh mẫu */
+            --color-lime: #8bc34a; 
+            --color-dark-green: #558b2f; 
+            --color-cta: #d93025; /* Đỏ/Cam cho nút */
+            --color-text: #202124;
+            --color-text-light: #5f6368;
+            --color-bg-light: #f7f9fc;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        
+        body { 
+            background: var(--color-bg-light); 
+            /* Placeholder Background: Trái cây tươi */
+            background-image: url('https://placehold.co/1920x1080/FFFFFF/CCCCCC?text=Natural+Fruit+Background');
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            position: relative;
+        }
+        
+        /* Lớp phủ mờ */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.85); 
+            z-index: 1;
+        }
+
+        /* KHỐI NỔI CHÍNH - CONTAINER */
+        .main-card {
+            max-width: 1000px; 
+            width: 90%;
+            background: var(--color-lime); /* MÀU XANH LÁ CỦA KHỐI NỔI */
+            border-radius: 35px; /* BO TRÒN MẠNH */
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3); /* ĐỔ BÓNG RÕ RỆT */
+            position: relative; 
+            z-index: 2;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 600px;
+        }
+
+        /* NỘI DUNG CHÍNH */
+        .content-wrapper {
+            display: flex;
+            width: 100%;
+            gap: 40px;
+        }
+
+        /* Cột Trái - Giới thiệu */
+        .left-content {
+            flex: 1;
+            padding: 20px;
+            color: var(--color-dark-green);
+        }
+
+        .left-content h1 {
+            font-size: 52px; 
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .left-content p {
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+
+        /* Cột Phải - Mẹo & Chi tiết */
+        .right-content {
+            flex: 1;
+            padding: 20px;
+            background: var(--color-card-bg); /* NỀN TRẮNG SẠCH */
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--color-text);
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid var(--color-lime);
+        }
+
+        .tip-list li {
+            list-style: none;
+            display: flex;
+            margin-bottom: 10px;
+            font-size: 15px;
+            color: var(--color-text-light);
+            line-height: 1.4;
+        }
+        .tip-list .material-icons {
+            margin-right: 10px;
+            font-size: 20px;
+            color: var(--color-dark-green);
+        }
+
+        /* NÚT START NOW CỰC LỚN */
+        .btn-start {
+            margin-top: 50px;
+            padding: 25px 40px; 
+            border: none;
+            border-radius: 15px; 
+            background: var(--color-cta); /* ĐỎ */
+            color: white;
+            font-size: 30px; 
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 12px 25px rgba(217, 48, 37, 0.5);
+            text-decoration: none;
+            text-align: center;
+        }
+        .btn-start:hover {
+            transform: scale(1.05) translateY(-2px); 
+            box-shadow: 0 15px 35px rgba(217, 48, 37, 0.8);
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 992px) {
+            .main-card {
+                padding: 20px;
+                min-height: auto;
+            }
+            .content-wrapper {
+                flex-direction: column;
+            }
+            .left-content h1 {
+                font-size: 38px;
+            }
+            .left-content p {
+                font-size: 16px;
+            }
+            .right-content {
+                padding: 15px;
+            }
+            .btn-start {
+                font-size: 24px;
+                padding: 20px 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="overlay"></div> 
+
+<div class="main-card">
+    
+    <div class="content-wrapper">
+        <div class="left-content">
+            <h1>Ready to transform your QC? Get started now</h1>
+            <p>
+                Giải pháp tiên tiến sử dụng Học Sâu (Deep Learning) để kiểm định chất lượng và phát hiện sự can thiệp hóa chất trên trái cây nhập khẩu.
+            </p>
+            
+            <ul class="feature-list">
+                <li><span class="material-icons">check_circle</span> Phân loại **Thật** (Tự nhiên) và **Giả Hóa Chất**.</li>
+                <li><span class="material-icons">bolt</span> Model MobileNetV3 nhanh và hiệu quả.</li>
+                <li><span class="material-icons">security</span> Độ chính xác cao, chống lỗi học vẹt.</li>
+            </ul>
+        </div>
+        
+        <div class="right-content">
+            <div class="section-title">Tình trạng Trái cây Hiện nay</div>
+            <p style="margin-bottom: 20px; color: var(--color-text-light);">
+                Việc sử dụng các chất bảo quản, đặc biệt là **sáp công nghiệp** và **formalin**, để kéo dài thời gian bảo quản là mối quan ngại lớn. Hệ thống này giúp bạn nhận diện sự can thiệp phi tự nhiên này bằng thị giác máy tính.
+            </p>
+
+            <div class="section-title">Mẹo Nhận biết Bằng Mắt thường</div>
+            <ul class="tip-list">
+                <li>
+                    <span class="material-icons" style="color: var(--color-lime);">fingerprint</span> 
+                    <div>
+                        <strong>Táo TỰ NHIÊN (Real):</strong> Thường có lớp **"phấn mờ"** (natural bloom). Sờ vào cảm giác **sần** và **không nhờn**.
+                    </div>
+                </li>
+                <li>
+                    <span class="material-icons" style="color: var(--color-fake);">bug_report</span> 
+                    <div>
+                        <strong>Táo PHỦ SÁP/Hóa chất (Fake):</strong> Bóng loáng **giả tạo** và **đồng đều**. Cảm giác **nhờn** khi sờ vào. Cạo nhẹ thấy lớp sáp mỏng bong ra.
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Nút START NOW CỰC LỚN -->
+    <a href="{{ url_for('index') }}" class="btn-start">
+        <span class="material-icons" style="vertical-align: middle; margin-right: 15px; font-size: 36px;">rocket_launch</span> BẮT ĐẦU KIỂM ĐỊNH NGAY
+    </a>
+
+</div>
+
+</body>
+</html>
