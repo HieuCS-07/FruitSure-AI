@@ -172,7 +172,7 @@ Users can:
 
 # 📊 Results
 
-The system achieved high classification performance with experimental accuracy reaching approximately **94%** on custom datasets.
+Experimental classification accuracy was reported at approximately **94%** on custom datasets. Verify the dataset split and notebook evaluation outputs before comparing this result with external benchmarks.
 
 The project also includes:
 
@@ -188,7 +188,7 @@ The project also includes:
 ## Clone Repository
 
 ```bash
-git clone https://github.com/your-username/FruitSure-AI.git
+git clone https://github.com/HieuCS-07/FruitSure-AI.git
 cd FruitSure-AI
 ```
 
@@ -199,6 +199,8 @@ cd FruitSure-AI
 ```bash
 pip install -r requirements.txt
 ```
+
+Note: The app uses Flask, so install Flask separately if it is not already available in your environment. Model weights and data files must be configured for the paths used in the application.
 
 ---
 
