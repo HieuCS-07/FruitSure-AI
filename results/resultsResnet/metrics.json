@@ -1,0 +1,11 @@
+{
+    "test_accuracy": 94.55870866961729,
+    "test_f1_score": 0.945546073045358,
+    "test_loss": 0.12998216871789778,
+    "best_val_accuracy": 94.90752800208388,
+    "num_epochs": 20,
+    "classes": [
+        "Chemical",
+        "Real"
+    ]
+}
