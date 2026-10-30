@@ -1,0 +1,525 @@
+from flask import Flask, request, render_template_string, jsonify
+import torch
+import torch.nn as nn
+from torchvision import transforms, models
+from PIL import Image
+import io
+import base64
+import os
+
+app = Flask(__name__)
+
+# --- CẤU HÌNH 2 LỚP (GIỮ NGUYÊN) ---
+CLASSES = ['Fake_Chemical', 'Real']  
+NUM_CLASSES = len(CLASSES)
+CLASS_NAMES = {
+    'Real': 'Thật (tươi/thối tự nhiên)',
+    'Fake_Chemical': 'Giả hóa chất (sáp/formalin)',
+}
+# --- KẾT THÚC CẤU HÌNH ---
+
+# ------------------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------------------ #
+# ------ đối với model Resnet ------
+device = torch.device('cpu')
+model = None
+
+def create_model():
+    """
+    Tạo model ResNet-50 với transfer learning
+    Hàm này PHẢI KHỚP với file training
+    """
+    weights = models.ResNet50_Weights.IMAGENET1K_V2
+    model = models.resnet50(weights=weights)
+    
+    for param in model.parameters():
+        param.requires_grad = False
+    
+    num_features = model.fc.in_features
+    model.fc = nn.Sequential(
+        nn.Linear(num_features, 512),
+        nn.ReLU(),
+        nn.Dropout(0.3),
+        # --- TỰ ĐỘNG CẬP NHẬT ---
+        # Sẽ tạo ra nn.Linear(512, 2) vì NUM_CLASSES = 2
+        nn.Linear(512, NUM_CLASSES)
+        # --- KẾT THÚC CẬP NHẬT ---
+    )
+    return model
+
+def load_model():
+    """Tải model 2-lớp mới nhất"""
+    global model
+    # --- THAY ĐỔI: Đường dẫn model V3 (2 Lớp) ---
+    model_path = 'total/modelsv4_2class/best_model.pth' 
+    # --- KẾT THÚC THAY ĐỔI ---
+    
+    if os.path.exists(model_path):
+        try:
+            model = create_model() # Tạo cấu trúc model 2-lớp
+            model.load_state_dict(torch.load(model_path, map_location=device))
+            model.to(device)
+            model.eval() # Chuyển sang chế độ đánh giá
+            return True
+        except Exception as e:
+            print(f"Lỗi khi tải model: {e}")
+            print("Đảm bảo hàm create_model() trong app này khớp với file training.")
+            return False
+    return False
+# ------------------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------------------ #
+
+# ------ đối với model Resnet ------
+# Hàm tạo model MobileNetV3 (Phải khớp với file training)
+# def create_model():
+#     weights = models.MobileNet_V3_Large_Weights.IMAGENET1K_V2
+#     model = models.mobilenet_v3_large(weights=weights)
+#     for param in model.parameters():
+#         param.requires_grad = False
+#     num_features = 960 
+#     model.classifier = nn.Sequential(
+#         nn.Linear(num_features, 512),
+#         nn.ReLU(inplace=True),
+#         nn.Dropout(0.3),
+#         nn.Linear(512, NUM_CLASSES)
+#     )
+#     return model
+
+# def load_model():
+#     """Tải model MobileNetV3"""
+#     global model
+#     model_path = 'total/models_mobilenet/best_model.pth' # <-- Đảm bảo đường dẫn này đúng
+#     if os.path.exists(model_path):
+#         try:
+#             model = create_model()
+#             model.load_state_dict(torch.load(model_path, map_location=device))
+#             model.to(device)
+#             model.eval()
+#             return True
+#         except Exception as e:
+#             print(f"Lỗi khi tải model: {e}")
+#             return False
+#     return False
+
+# ------------------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------------------ #
+
+HTML_TEMPLATE = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FruitSure: Kiểm định Trái cây (MobileNetV3)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: #1a73e8;
+            --color-real: #188038;      /* Xanh lá đậm */
+            --color-fake: #c5221f;      /* Đỏ cảnh báo đậm */
+            --color-background: #f0f4f8;
+            --color-card-bg: #ffffff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--color-background); min-height: 100vh; padding: 20px; }
+        .header { text-align: center; padding: 10px 0 20px 0; }
+        .header h1 { 
+            font-size: 28px; 
+            font-weight: 700; 
+            color: #202124; 
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.2); 
+        }
+        /* --- SỬA LỖI UI: Tăng chiều ngang --- */
+        .container { 
+            max-width: 850px; 
+            width: 95%;
+            margin: 0 auto; 
+            padding: 30px; 
+            background: var(--color-card-bg); 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); 
+        }
+        /* --- KẾT THÚC SỬA LỖI UI --- */
+        .subtitle { text-align: center; color: #5f6368; margin-bottom: 30px; font-size: 15px; }
+        
+        /* Upload Area */
+        .upload-area { 
+            border: 2px dashed #dadce0; border-radius: 12px; padding: 40px 20px; 
+            text-align: center; margin-bottom: 10px; cursor: pointer; /* Giảm margin bottom */
+            transition: all 0.3s; background: #fafafa;
+        }
+        .upload-area:hover { border-color: var(--color-primary); background: #f5f8ff; }
+        .upload-icon { font-size: 48px; margin-bottom: 10px; color: var(--color-primary); }
+        .upload-text { color: #202124; font-weight: 600; font-size: 16px; }
+        .upload-hint { color: #80868b; font-size: 12px; margin-top: 4px; }
+        
+        /* DÒNG LƯU Ý MỚI */
+        .upload-guideline { 
+            font-size: 13px; 
+            color: var(--color-fake); 
+            font-weight: 600;
+            padding: 15px 20px; /* Thêm padding */
+            margin-bottom: 24px; /* Đẩy xuống dưới upload area */
+            border: 1px solid #fce8e6;
+            background: #fffafa;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .upload-guideline span { vertical-align: middle; }
+        /* KẾT THÚC DÒNG LƯU Ý */
+
+        input[type="file"] { display: none; }
+        #preview { 
+            max-width: 100%; 
+            max-height: 250px; 
+            margin: 20px auto; 
+            display: none; /* Sửa lỗi: Ẩn Preview ban đầu */
+            border-radius: 10px; 
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); 
+        }
+        .btn { 
+            background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%); color: white; border: none; 
+            padding: 14px 24px; border-radius: 28px; font-size: 16px; font-weight: 700; 
+            cursor: pointer; width: 100%; transition: all 0.2s; box-shadow: 0 4px 15px rgba(26, 115, 232, 0.4);
+        }
+        .btn:disabled { background: #e8eaed; color: #80868b; cursor: not-allowed; box-shadow: none; }
+        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26, 115, 232, 0.5); }
+        
+        /* Loading */
+        .loading { display: none; text-align: center; padding: 40px; }
+        .spinner { border: 4px solid #f1f3f4; border-top: 4px solid var(--color-primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 15px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Results */
+        .result { margin-top: 30px; display: none; border-top: 1px solid #f0f4f8; padding-top: 20px; }
+        .main-prediction { padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center; transition: all 0.3s; }
+        .main-prediction .icon { font-size: 40px; margin-bottom: 8px; }
+        .main-prediction .label { font-size: 18px; font-weight: 700; }
+        .main-prediction .confidence { font-size: 32px; font-weight: 700; margin-top: 5px; }
+
+        /* Color classes */
+        .real-bg { background: #e6ffe6; border: 2px solid var(--color-real); color: var(--color-real); }
+        .fake-bg { background: #ffebeb; border: 2px solid var(--color-fake); color: var(--color-fake); }
+        .real-fill { background: var(--color-real); }
+        .fake-fill { background: var(--color-fake); }
+        
+        /* Details */
+        .detail-item { margin-bottom: 15px; }
+        .detail-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+        .detail-name { color: #5f6368; }
+        .detail-percent { color: #202124; }
+        
+        /* Confidence Bar (Premium) */
+        .confidence-bar-multi {
+            height: 16px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 10px 0 15px 0;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .confidence-segment {
+            height: 100%;
+            display: inline-block;
+            transition: width 0.8s ease-in-out;
+            text-align: center;
+            line-height: 16px;
+            font-size: 10px;
+            color: white;
+            text-shadow: 0 0 1px rgba(0,0,0,0.5); 
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>FruitSure: Kiểm Định Chất Lượng</h1>
+    </div>
+    
+    <div class="container">
+        <p class="subtitle">Phân loại trái cây thành Thật (Tự nhiên/An toàn) hoặc Giả Hóa Chất (Bị can thiệp).</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <span class="material-icons upload-icon">photo_camera</span>
+            <p class="upload-text">Nhấp hoặc Kéo & Thả Ảnh Trái Cây</p>
+            <p class="upload-hint">Sử dụng MobileNetV3. Kích thước tối đa 10MB.</p>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+        
+        <!-- DÒNG LƯU Ý MỚI -->
+        <div class="upload-guideline">
+            <span class="material-icons" style="font-size: 16px; vertical-align: middle;">info</span>
+            Lưu ý: Để đạt kết quả tốt nhất, vui lòng tải lên **ảnh đơn(1 trái cây)** và **không có vật thể gây nhiễu khác**
+        </div>
+        <!-- KẾT THÚC DÒNG LƯU Ý -->
+
+        <img id="preview" alt="Preview">
+        
+        <button class="btn" id="predictBtn" disabled>PHÂN TÍCH NGAY</button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p class="upload-text" style="color: var(--color-primary);">Đang trích xuất đặc trưng (9 Kênh)...</p>
+            <p class="upload-hint">Vui lòng đợi (Model đang chạy trên CPU)</p>
+        </div>
+        
+        <div class="result" id="result">
+            <h2 style="font-size: 18px; margin-bottom: 20px; font-weight: 600;">Kết Quả Kiểm Định</h2>
+            <div id="resultContent"></div>
+            
+            <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                <h3 style="font-size: 14px; color: #5f6368; margin-bottom: 10px;">Phân tích chi tiết:</h3>
+                <div id="confidenceDetails"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const predictBtn = document.getElementById('predictBtn');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        let selectedFile = null;
+
+        uploadArea.onclick = () => fileInput.click();
+        
+        // Drag and Drop handlers
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (eventName === 'dragenter' || eventName === 'dragover') {
+                    uploadArea.classList.add('dragover');
+                } else {
+                    uploadArea.classList.remove('dragover');
+                }
+            }, false);
+        });
+        
+        uploadArea.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        function handleDrop(e) {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) { handleFile(files[0]); }
+        }
+        
+        function handleFileSelect(e) {
+            if (e.target.files.length > 0) { handleFile(e.target.files[0]); }
+        }
+        
+        // SỬA LỖI: Chuyển đổi sang Base64 để gửi qua JSON
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]); // Lấy phần base64
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) { return; }
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                predictBtn.disabled = false;
+                result.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        predictBtn.onclick = async () => {
+            if (!selectedFile) return;
+            
+            predictBtn.disabled = true;
+            preview.style.opacity = '0.3';
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            // --- SỬA LỖI: GỬI BASE64 QUA JSON ---
+            const base64Image = await fileToBase64(selectedFile);
+            
+            const startTime = Date.now();
+            const minLoadingTime = 1200; 
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64Image })
+                });
+                const data = await response.json();
+                const elapsed = Date.now() - startTime;
+                if (elapsed < minLoadingTime) {
+                    await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsed));
+                }
+                if (data.error) {
+                    displayError(data.error);
+                } else {
+                    displayResult(data);
+                }
+            } catch (error) {
+                displayError('Lỗi kết nối: ' + error);
+            } finally {
+                loading.style.display = 'none';
+                preview.style.opacity = '1';
+                predictBtn.disabled = false;
+            }
+        };
+        
+        function displayError(errorMessage) {
+            const resultDiv = document.getElementById('result');
+            const resultContentDiv = document.getElementById('resultContent');
+            resultContentDiv.innerHTML = `
+                <div class="main-prediction fake-bg" style="margin-bottom: 0;">
+                    <div class="icon"><span class="material-icons">error_outline</span></div>
+                    <div class="label">PHÂN TÍCH THẤT BẠI</div>
+                    <div class="confidence" style="font-size: 16px; margin-top: 10px;">${errorMessage}</div>
+                </div>
+            `;
+            document.getElementById('confidenceDetails').innerHTML = '';
+            resultDiv.style.display = 'block';
+        }
+
+        function displayResult(data) {
+            const resultDiv = document.getElementById('result');
+            const contentDiv = document.getElementById('resultContent');
+            const detailsDiv = document.getElementById('confidenceDetails');
+            
+            const isReal = data.predicted.includes('Thật');
+            const resultClass = isReal ? 'real-bg' : 'fake-bg';
+            const icon = isReal ? 'check_circle' : 'warning';
+            
+            // 1. MAIN PREDICTION DISPLAY
+            contentDiv.innerHTML = `
+                <div class="main-prediction ${resultClass}">
+                    <div class="icon"><span class="material-icons">${icon}</span></div>
+                    <div class="label">KẾT QUẢ: ${data.predicted}</div>
+                    <div class="confidence">${data.confidence.toFixed(1)}%</div>
+                </div>
+            `;
+
+            // 2. DETAILED CONFIDENCE BAR
+            const probFake = data.all_probabilities[data.predicted.includes('Giả hóa chất') ? data.predicted : 'Giả hóa chất (sáp/formalin)'];
+            const probReal = data.all_probabilities[data.predicted.includes('Thật') ? data.predicted : 'Thật (tươi/thối tự nhiên)'];
+
+            // Tên lớp (cho chi tiết)
+            const realName = 'Thật (tươi/thối tự nhiên)';
+            const fakeName = 'Giả hóa chất (sáp/formalin)';
+
+            // --- SỬA LỖI: HIỂN THỊ THANH BAR ĐA MÀU ĐÃ SỬA LỖI ---
+            // Thanh bar chính (Real vs Fake)
+            let detailHTML = `
+                <div class="confidence-bar-multi">
+                    <div class="confidence-segment fake-fill" style="width: ${probFake}%"></div> 
+                    <div class="confidence-segment real-fill" style="width: ${probReal}%"></div>
+                </div>
+            `;
+            // --- KẾT THÚC SỬA LỖI ---
+
+            // 3. DETAIL LIST
+            
+            // Hiển thị danh sách chi tiết (Real và Fake)
+            const detailItems = [
+                { name: realName, prob: probReal },
+                { name: fakeName, prob: probFake }
+            ];
+
+            // Sắp xếp để Real luôn đứng trên Fake (hoặc ngược lại)
+            detailItems.sort((a, b) => (b.name.includes('Thật') ? -1 : 1));
+
+            detailHTML += detailItems.map(item => {
+                const fillStyle = item.name.includes('Thật') ? 'background: var(--color-real);' : 'background: var(--color-fake);';
+                return `
+                    <div class="detail-item">
+                        <div class="detail-header">
+                            <span class="detail-name">${item.name}</span>
+                            <span class="detail-percent">${item.prob.toFixed(1)}%</span>
+                        </div>
+                        <div class="confidence-bar" style="height: 8px; border-radius: 4px; overflow: hidden; background: #eee;">
+                            <div class="confidence-fill" style="width: ${item.prob}%; ${fillStyle} height: 100%;"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            detailsDiv.innerHTML = detailHTML;
+            resultDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
+'''
+
+@app.route('/')
+def index():
+    return render_template_string(HTML_TEMPLATE)
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    # Nhận dữ liệu JSON (chứa Base64 string)
+    data = request.get_json()
+    if not data or 'image' not in data:
+        return jsonify({'error': 'Không nhận được dữ liệu ảnh.'}), 400
+    
+    try:
+        image_data = base64.b64decode(data['image'])
+        image = Image.open(io.BytesIO(image_data)).convert('RGB')
+    except Exception as e:
+        return jsonify({'error': f'Lỗi giải mã ảnh (Base64): {e}'}), 400
+    
+    if model is None:
+        return jsonify({'error': 'Model chưa được load hoặc load thất bại. Kiểm tra console.'}), 500
+    
+    try:
+        # Transform ảnh (phải giống hệt val_test_transform)
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ])
+        
+        img_tensor = transform(image).unsqueeze(0).to(device)
+        
+        with torch.no_grad():
+            outputs = model(img_tensor)
+            probabilities = torch.nn.functional.softmax(outputs, dim=1)
+            confidence, predicted = torch.max(probabilities, 1)
+        
+        # --- LOGIC 2 LỚP ---
+        predicted_class = CLASSES[predicted.item()]
+        confidence_score = confidence.item() * 100
+        all_probs = probabilities[0].cpu().numpy() * 100
+        
+        display_label = CLASS_NAMES[predicted_class]
+        
+        return jsonify({
+            'predicted': display_label,
+            'confidence': float(confidence_score),
+            'all_probabilities': {CLASS_NAMES[cls]: float(prob) for cls, prob in zip(CLASSES, all_probs)}
+        })
+        # --- KẾT THÚC LOGIC ---
+    
+    except Exception as e:
+        return jsonify({'error': f'Lỗi phân tích model: {e}'}), 500
+
+if __name__ == '__main__':
+    print("="*70)
+    print(" "*15 + "UNG DUNG NHAN DANG TRAI CAY (MODEL MobileNetV3)")
+    print("="*70)
+    
+    if load_model():
+        print(f"\nModel MobileNet da load thanh cong!")
+        print("\nTruy cap tai: http://127.0.0.1:5000")
+        print("\nNhan Ctrl+C de dung ung dung")
+        print("="*70)
+        app.run(host='127.0.0.1', port=5000, debug=False)
+    else:
+        print(f"\nKHONG TIM THAY MODEL!")
+        print("Vui lòng huấn luyện model MobileNetV3 trước (chạy train_mobilenet_v3.py)")
