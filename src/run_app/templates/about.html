@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Về Chúng Tôi | FruitSure AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --color-primary: #4CAF50;
+            --color-primary-light: #C8E6C9;
+            --color-primary-dark: #388E3C;
+            --color-success: #66BB6A;
+            --color-bg: #F9FBF7;
+            --color-text: #1B5E20;
+            --color-text-light: #558B2F;
+            --color-border: #E8F5E8;
+            --color-shadow: rgba(76, 175, 80, 0.15);
+            --radius-lg: 32px;
+            --radius-md: 20px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        
+        body {
+            background: var(--color-bg);
+            min-height: 100vh;
+            color: var(--color-text);
+            background-image: url('{{ url_for("static", filename="image/bgfr2.jpg") }}');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            width: 100%;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 2px 20px var(--color-shadow);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 26px;
+            color: var(--color-primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        .logo .ai-badge {
+            background: var(--color-primary);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+        .nav-links a {
+            color: var(--color-text-light);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            transition: var(--transition);
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--color-primary-dark);
+            font-weight: 700;
+        }
+
+        .btn-start {
+            background: var(--color-primary);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 15px;
+            transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        .btn-start:hover {
+            background: #388E3C;
+            transform: translateY(-2px);
+        }
+
+        .about-section {
+            padding: 140px 32px 100px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .section-title {
+            font-size: 40px;
+            font-weight: 800;
+            color: #1B5E20;
+            margin-bottom: 16px;
+        }
+
+        .section-subtitle {
+            font-size: 19px;
+            color: #2E7D32;
+            font-weight: 500;
+            margin-bottom: 60px;
+            max-width: 750px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.7;
+        }
+
+        .team-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            align-items: center;
+            margin-bottom: 80px;
+        }
+
+        .team-card-v {
+            background: white;
+            border-radius: var(--radius-lg);
+            /* padding: 36px 40px; */
+            padding: 58px 50px;
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.1);
+            max-width: 1000px;
+            width: 100%;
+            transition: var(--transition);
+            border: 1px solid #E8F5E8;
+        }
+
+        .team-card-v:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 45px rgba(0,0,0,0.15);
+        }
+
+        .team-image-v {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .team-image-v img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .team-card-v:hover .team-image-v img {
+            transform: scale(1.1);
+        }
+
+        .image-overlay-v {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(76,175,80,0.9), rgba(51,140,60,0.95));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .team-card-v:hover .image-overlay-v {
+            opacity: 1;
+        }
+
+        .overlay-text-v {
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            text-align: center;
+            padding: 8px;
+        }
+
+        .team-info-v {
+            text-align: left;
+            flex: 1;
+        }
+
+        .team-info-v h4 {
+            font-size: 25px;
+            font-weight: 700;
+            color: var(--color-primary-dark);
+            margin-bottom: 4px;
+        }
+
+        .team-info-v .role {
+            font-size: 18px;
+            color: var(--color-primary);
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .team-info-v .bio {
+            font-size: 20px;
+            line-height: 1.7;
+            color: #1B5E20;
+            margin-bottom: 16px;
+        }
+
+        .social-links-v {
+            display: flex;
+            gap: 10px;
+        }
+
+        .social-icon-v {
+            width: 38px;
+            height: 38px;
+            background: #E8F5E8;
+            color: #4CAF50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: var(--transition);
+        }
+
+        .social-icon-v:hover {
+            background: var(--color-primary);
+            color: white;
+            transform: translateY(-3px);
+        }
+
+        /* MISSION GRID */
+        .mission-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 28px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .mission-item {
+            background: #FFFFFF;
+            padding: 36px 28px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            transition: var(--transition);
+            border: 1px solid #E8F5E8;
+        }
+
+        .mission-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+        }
+
+        .mission-icon {
+            width: 70px;
+            height: 70px;
+            background: var(--color-primary-light);
+            color: var(--color-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 20px;
+            box-shadow: 0 6px 20px rgba(76,175,80,0.2);
+        }
+
+        .mission-item h4 {
+            font-size: 21px;
+            font-weight: 700;
+            color: #1B5E20;
+            margin-bottom: 14px;
+        }
+
+        .mission-item p {
+            color: #2E7D32;
+            font-size: 15.5px;
+            line-height: 1.7;
+        }
+
+        /* SCROLL TO TOP */
+        #scrollTop {
+            position: fixed;
+            bottom: 30px; right: 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(76,175,80,0.4);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        #scrollTop.show { opacity: 1; }
+
+        /* ANIMATIONS */
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        @media (max-width: 768px) {
+            .team-card-v {
+                flex-direction: column;
+                text-align: center;
+                padding: 24px;
+            }
+            .team-info-v { text-align: center; }
+            .team-image-v { width: 120px; height: 120px; }
+            .section-title { font-size: 32px; }
+            .navbar { padding: 12px 16px; flex-direction: column; gap: 12px; }
+            .nav-links { order: 3; width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <div class="navbar">
+        <a href="{{ url_for('index') }}" class="logo">FRUITSURE <span class="ai-badge">AI</span></a>
+        <!-- <div class="nav-links">
+            <a href="{{ url_for('index') }}">Trang chủ</a>
+            <a href="{{ url_for('about') }}" class="active">Về chúng tôi</a>
+            <a href="#">Liên hệ</a>
+        </div> -->
+        <a href="{{ url_for('index') }}" class="btn-start">Thử ngay</a>
+    </div>
+
+    <!-- ABOUT CONTENT -->
+    <div class="about-section">
+        <div class="container">
+            <h2 class="section-title">Về Chúng Tôi</h2>
+            <p class="section-subtitle">Đội ngũ đứng sau FruitSure AI – Bảo vệ sức khỏe gia đình bạn</p>
+
+            <!-- VERTICAL TEAM CARDS (XẾP DỌC) -->
+            <div class="team-vertical">
+                <!-- Thành viên 1: Võ Công Hiếu (TRÊN) -->
+                <div class="team-card-v">
+                    <div class="team-image-v">
+                        <img src="{{ url_for('static', filename='image/founder.jpg') }}" alt="Võ Công Hiếu">
+                        <div class="image-overlay-v">
+                            <div class="overlay-text-v">Founder</div>
+                        </div>
+                    </div>
+                    <div class="team-info-v">
+                        <h4>Võ Công Hiếu</h4>
+                        <p class="role">Project Founder</p>
+                        <p class="bio">
+                            Nhà sáng lập FruitSure AI. Sử dụng các kiến thức về Deep Learning, 
+                            Computer Vision và với kinh nghiệm xây dựng các mô hình AI tiên tiến như 
+                            <strong>CNN, ResNet, MobileNet</strong>, Hiếu đã phát triển hệ thống nhận diện 
+                            hóa chất trong trái cây chỉ trong <strong>3 giây</strong> với độ chính xác <strong>95%</strong>.
+                        </p>
+                        <div class="social-links-v">
+                            <a href="#" class="social-icon-v"><i class="fab fa-linkedin"></i></a>
+                            <a href="https://github.com/HieuCS-07" class="social-icon-v"><i class="fab fa-github"></i></a>
+                            <a href="https://www.facebook.com/hieu.67155" class="social-icon-v"><i class="fab fa-facebook"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thành viên 2 (DƯỚI) -->
+                <div class="team-card-v">
+                    <div class="team-image-v">
+                        <img src="{{ url_for('static', filename='image/meb.jpg') }}" alt="[Tên thành viên 2]">
+                        <div class="image-overlay-v">
+                            <div class="overlay-text-v">Team Founder</div>
+                        </div>
+                    </div>
+                    <div class="team-info-v">
+                        <h4>Dương Nhật Hoàng Tiến</h4>
+                        <p class="role">Team Founder</p>
+                        <p class="bio">
+                            Đồng sáng lập <strong>FruitSure AI</strong>
+                            Dự án được xây dựng từ hơn <strong>1200 mẫu ảnh thực tế</strong>, đạt độ chính xác 
+                            <strong>94.2%</strong>, với mong muốn <strong>mọi gia đình đều có thể kiểm tra thực phẩm 
+                            tại nhà, không cần thiết bị chuyên dụng</strong>.
+                        </p>
+                        <div class="social-links-v">
+                            <a href="#" class="social-icon-v"><i class="fab fa-linkedin"></i></a>
+                            <a href="#" class="social-icon-v"><i class="fab fa-github"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MISSION GRID -->
+            <div class="mission-grid">
+                <div class="mission-item">
+                    <div class="mission-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h4>An toàn thực phẩm</h4>
+                    <p>Ứng dụng AI để bảo vệ sức khỏe gia đình khỏi hóa chất độc hại.</p>
+                </div>
+                <div class="mission-item">
+                    <div class="mission-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h4>Nhanh chóng</h4>
+                    <p>Phân tích chỉ trong 3 giây, không cần thiết bị chuyên dụng.</p>
+                </div>
+                <div class="mission-item">
+                    <div class="mission-icon">
+                        <i class="fas fa-flask"></i>
+                    </div>
+                    <h4>Chính xác</h4>
+                    <p>Độ chính xác 94.2% với hơn 1200 mẫu huấn luyện.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCROLL TO TOP -->
+    <button id="scrollTop" title="Lên đầu trang">
+        <span class="material-icons">arrow_upward</span>
+    </button>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            document.getElementById('scrollTop').classList.toggle('show', window.scrollY > 300);
+        });
+        document.getElementById('scrollTop').onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+    </script>
+</body>
+</html>
