@@ -19,17 +19,3 @@
 
 <img width="1920" height="1080" alt="demo2" src="https://github.com/user-attachments/assets/06d8b589-4386-4cd6-9c70-493c291d16ff" />
 
-
-## 📂 Project Structure
-```text
-FruitSure-AI/
-│
-├── src/
-│   ├── run_app/                 # Backend Web App (Flask)
-│   │   ├── templates/           # HTML files (index.html, about.html)
-│   │   └── StartAPP.py          # Main Flask application logic
-│   │
-│   └── train/                   # Model Training Scripts
-│       └── train_model_2Class.py # Data pipeline and ResNet-50 training logic
-│
-└── README.md
